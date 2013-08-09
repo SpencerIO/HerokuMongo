@@ -1,118 +1,120 @@
-//main
-var express = require("express");
-var fs = require('fs');
+var express = require('express')
+  , http = require('http')
+  , path = require('path')
+  , mongo = require('mongo')
+  , fs = require('fs')
+  , mongoose = require('mongoose')
+  , mongodb = require('mongodb')
+   , ObjectID = require('mongodb').ObjectID;
+
 var app = express();
+var index = fs.readFileSync('public/admin.html');
 
-//mongo
-var mongodb = require('mongodb');
-var url = require('url');
-
-//main
-var index = fs.readFileSync('index.html');
-app.use(express.logger());
-
-//mongo
-var log = console.log;
- 
-var connectionUri = url.parse(process.env.MONGOHQ_URL);
-var dbName = connectionUri.pathname.replace(/^\//, '');
-// test
 var questionsArray = [];
 var tokensArray = [];
-
-//questionsArray.push("hello");
-var lastCollection = null;
-
-var clientCount = 2;
-var clientCounter = 0;
-
 // collection/documents
 var questionsCollection;
 var questionDocuments;
 var tokensCollection;
 var tokenDocuments;
 
-//mongo
-mongodb.Db.connect(process.env.MONGOHQ_URL, function(error, client) {
-  if (error) throw error;
- 
- 
-    questionsCollection = new mongodb.Collection(client, "questions");
-    questionDocuments = questionsCollection.find({});
-	
- 
-      // output the first 5 documents
-      questionDocuments.toArray(function(error, docs) {
-        if(error) throw error;
- 
-        docs.forEach(function(doc){
-			//questionsArray = doc;
-			questionsArray.push(doc)
-          log(doc);
-        });
- 
-        // close the connection
-		clientCounter++;
-		if(clientCounter == clientCount)client.close();
-      });
-	
-	tokensCollection = new mongodb.Collection(client, "tokens");
-    tokenDocuments = tokensCollection.find({}, {limit:5});
-	
-      // output the first 5 documents
-      tokenDocuments.toArray(function(error, docs) {
-        if(error) throw error;
- 
-        docs.forEach(function(doc){
-			//tokensArray = doc;
-			tokensArray.push(doc)
-          log(doc);
-        });
- 
-        // close the connection
-		clientCounter++;
-		if(clientCounter == clientCount)client.close();
-      });
-	
-	
-	
+var myclient;
+
+mongodb.Db.connect(process.env.MONGOHQ_URL, {
+    
+    auto_reconnect: true,
+    safe: true
+}, function(err, client) {  
+
+	myclient = client;
+  
+	getalldata();
 });
 
-//main
+//configure
+app.configure(function(){
+	app.use(express.bodyParser());
+	app.use(express.static(path.join(__dirname, "public")));
+});
+
 app.get('/', function(request, response) {
-  //response.send('Hello World!');
-  //response.writeHead(200, {'Content-Type': 'text/plain'});
   response.end(index);
+  ////response.send(tempresponce);
+});
+
+app.get('/admin/', function(request, response) {
+  response.end(index);
+  ////response.send(tempresponce);
 });
 
 app.get('/get-all/', function(request, response) {
 	
-mongodb.Db.connect(process.env.MONGOHQ_URL, function(error, client) {
-  if (error) throw error;
-  questionsCollection = new mongodb.Collection(client, "questions");
+	questionsArray = [];
+	
+	questionsCollection = new mongodb.Collection(myclient, "questions");
     questionDocuments = questionsCollection.find({});
 	
- 
-      // output the first 5 documents
       questionDocuments.toArray(function(error, docs) {
         if(error) throw error;
  
         docs.forEach(function(doc){
-			
-			//questionsArray.push(doc)
-          log(doc);
+			questionsArray.push(doc)
         });
- 
-        // close the connection
-		response.send({questions:questionsArray, tokens:tokensArray, env:process.env.MONGOHQ_URL});
-		client.close();
+ 			response.send({questions:questionsArray, tokens:tokensArray, hi:String(request.body)});
       });
-  
-	});
-  
+	//getalldata(response);
+	
+	//response.send(tempresponce);
 });
 
-var port = process.env.PORT || 5000;
-app.listen(port, function() {
-  console.log("Listening on " + port);
+app.post('/post-all/', function(request, response) {
+	
+	//parse serialized json from webpage
+	var requestObj = JSON.parse(request.body.obj);
+	var BSON = require('mongodb').BSONPure;
+	var o_id = new BSON.ObjectID(requestObj._id);
+	
+	
+
+	var q = new mongodb.Collection(myclient, "questions");
+	q.update({  _id: o_id },
+			{ $set: {question: requestObj.question, yes:requestObj.yes, no:requestObj.no}},
+			function (err,item){
+				if (err) throw err;    
+				response.send({q:JSON.parse(request.body.obj), yes:String(myclient), questioning:requestObj.question}
+			);   
+	});
+   
 });
+
+function getalldata(){
+	
+	 questionsArray = [];
+	 tokensArray = [];
+	
+	questionsCollection = new mongodb.Collection(myclient, "questions");
+    questionDocuments = questionsCollection.find({});
+	
+      questionDocuments.toArray(function(error, docs) {
+        if(error) throw error;
+ 
+        docs.forEach(function(doc){
+			questionsArray.push(doc)
+        });
+ 
+      });
+	  
+	tokensCollection = new mongodb.Collection(myclient, "tokens");
+    tokenDocuments = tokensCollection.find({}, {limit:5});
+	
+      tokenDocuments.toArray(function(error, docs) {
+        if(error) throw error;
+ 
+        docs.forEach(function(doc){
+			tokensArray.push(doc)
+        });
+      });
+	
+}
+
+http.createServer(app).listen(process.env.PORT || 5000);

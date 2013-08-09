@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="css/main.css" />
+
+<script>
+
+var xmlhttp;
+// http ajax data as received by database
+var incomingObj;
+
+//json data to be sent to database
+var outgoingObj;
+
+//stores all groups of buttons to give token values
+var noArray = [];
+var yesArray = [];
+
+//stores all update buttons for quick reference
+var updateArray = [];
+
+//stores all question:input boxes for quick reference
+var questionArray = [];
+
+//stores all score totals for quick reference
+var scoreTotalArray = [];
+
+window.onload = loadDoc;
+function loadDoc()
+{
+	xmlhttp.onreadystatechange=getStatus;
+	xmlhttp.open("GET","/get-all/",true);
+	//xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+	xmlhttp.send();
+}
+
+if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+  xmlhttp=new XMLHttpRequest();
+  }
+else
+  {// code for IE6, IE5
+  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  }
+
+function postStatus(){
+	//document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+}
+
+function getStatus()
+  {
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+    {
+    	//document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+		incomingObj = JSON.parse(xmlhttp.responseText);
+		
+		for ( var i = 0; i < incomingObj.questions.length; i ++ ) {
+			
+			//create question box
+			var box1 = document.createElement( 'div' );
+			box1.className = 'box1';
+			
+			//create question label holder
+			var questionHolder = document.createElement( 'div' );
+			questionHolder.className = 'questionHolder';
+			box1.appendChild( questionHolder );
+			
+			//create question label:input
+			var question = document.createElement( 'div' );
+			question.className = 'question';
+			question.innerHTML=incomingObj.questions[i].question;
+			questionHolder.appendChild( question );
+			questionArray.push(question);
+						
+			//create yes/no label holder
+			var yesnoHolder = document.createElement( 'div' );
+			yesnoHolder.className = 'yesnoHolder';
+			//box1.appendChild( yesnoHolder );
+			//box1.appendChild(document.createElement( 'br' ));
+			
+			//create yes label
+			var yesLabel = document.createElement( 'div' );
+			yesLabel.className = 'yesLabel';
+			yesLabel.innerHTML = 'YES'
+			yesnoHolder.appendChild( yesLabel );
+			
+			//create no label
+			var noLabel = document.createElement( 'div' );
+			noLabel.className = 'noLabel';
+			noLabel.innerHTML = 'NO'
+			yesnoHolder.appendChild( noLabel );
+
+			
+			//create pane
+			var pane = document.createElement( 'div' );
+			pane.className = 'pane';
+			box1.appendChild( pane );
+			
+			pane.appendChild( yesnoHolder );
+			pane.appendChild(document.createElement( 'br' ));
+			pane.appendChild(document.createElement( 'br' ));
+			pane.appendChild(document.createElement( 'br' ));
+			
+			//create token list
+			var list = document.createElement( 'div' );
+			list.className = 'list';
+			pane.appendChild( list );
+			
+			pane.appendChild(document.createElement( 'br' ));
+			pane.appendChild(document.createElement( 'br' ));
+						
+			yesArray.push([]);
+			noArray.push([]);
+			scoreTotalArray.push([]);
+			
+			//populate tokens
+			for ( var j = 0; j < incomingObj.tokens[0].tokens.length; j ++ ) {
+				
+				//build yes Button groups
+				for(var propertyName in incomingObj.questions[i].yes) {
+					if(propertyName == incomingObj.tokens[0].tokens[j]){
+						
+						var currentProperty = incomingObj.questions[i].yes[propertyName];
+						var yes = createButtonGroup(propertyName);
+						list.appendChild( yes );
+						//buttonFilter(yes, currentProperty);
+						yesArray[i].push(yes);
+					}
+				}
+				
+				var token = document.createElement( 'div' );
+				token.className = 'token';
+				
+				var str=incomingObj.tokens[0].tokens[j];
+				var n=str.replace("_"," ");
+				token.innerHTML=n;
+				list.appendChild( token );
+				
+				var scoreHolder = document.createElement( 'div' );
+				scoreHolder.innerHTML = "<div style='color:#5dfdec'>" + String(0) + "</div>";
+				scoreHolder.className = 'scoreTotal';
+				token.appendChild( scoreHolder );
+				scoreTotalArray[i].push(scoreHolder);
+				
+				//build no Button groups
+				for(var propertyName in incomingObj.questions[i].no) {
+					if(propertyName == incomingObj.tokens[0].tokens[j]){
+						
+						var currentProperty = incomingObj.questions[i].no[propertyName];
+						var no = createButtonGroup(propertyName);
+						list.appendChild( no );
+						//buttonFilter(no, currentProperty);
+						noArray[i].push(no);
+					}
+				}
+				list.appendChild(document.createElement( 'br' ));
+				list.appendChild(document.createElement( 'br' ));
+			}
+			
+			document.getElementById("admin").appendChild( box1 );
+		}
+		
+    }
+  }
+
+
+
+function createButtonGroup(propertyName){
+	//create button container
+	var buttonContainer = document.createElement( 'div' );
+	buttonContainer.className = 'buttonContainer';
+	
+	//populate buttons
+	for ( var j = 0; j < 5; j ++ ) {
+		var button = document.createElement( 'div' );
+		buttonContainer.appendChild( button );
+		button.className = 'button-grey';
+	}
+	
+	//create invisible div to hold property name for reference
+	var propertyHolder = document.createElement( 'div' );
+	propertyHolder.innerHTML = propertyName;
+	propertyHolder.className = 'propertyHolder';
+	buttonContainer.appendChild( propertyHolder );
+	
+	var scoreHolder = document.createElement( 'div' );
+	scoreHolder.innerHTML = '0';
+	scoreHolder.className = 'scoreHolder';
+	buttonContainer.appendChild( scoreHolder );
+	
+	return buttonContainer;
+}
+
+function buttonClick(e){
+	var currentSelection;
+	
+	for ( var i = 0; i < this.parentNode.children.length; i ++ ) {
+		//find which button was pressed
+		if(this == this.parentNode.children[i]){
+			currentSelection = i;
+		}
+	}
+	
+	buttonFilter(this.parentNode, currentSelection - 5);
+	
+	for ( var i = 0; i < yesArray.length; i ++ ) {
+		for ( var j = 0; j < yesArray[i].length; j ++ ) {
+			if(yesArray[i][j] == this.parentNode){
+				var propertyName = this.parentNode.getElementsByClassName('propertyHolder')[0].innerHTML;
+				outgoingObj.questions[i].yes[propertyName] = currentSelection - 5;
+				
+			}
+		}
+	}
+	
+	for ( var i = 0; i < noArray.length; i ++ ) {
+		for ( var j = 0; j < noArray[i].length; j ++ ) {
+			if(noArray[i][j] == this.parentNode){
+				var propertyName = this.parentNode.getElementsByClassName('propertyHolder')[0].innerHTML;
+				outgoingObj.questions[i].no[propertyName] = currentSelection - 5;
+			}
+		}
+	}
+}
+
+
+function buttonFilter(buttonGroup, value){
+	var currentSelection = value + 5;
+	
+	//set the innerHTML of the score 'number'
+	setNumberValue(buttonGroup.getElementsByClassName('scoreHolder')[0], currentSelection);
+	
+	for ( var i = 0; i < 5; i ++ ) {
+		//grey out all buttons
+		buttonGroup.children[i].className = 'button-grey';
+	}
+	
+	//filter out min/max buttons to illuminate
+	var minButton, maxButton;
+	if(currentSelection == 0){			minButton = 0; maxButton = 4}
+	else if(currentSelection == 1){	minButton = 1; maxButton = 4 }
+	else if(currentSelection == 2){	minButton = 2; maxButton = 4 }
+	else if(currentSelection == 3){	minButton = 3; maxButton = 4 }
+	else if(currentSelection == 4){	minButton = 4; maxButton = 4 }
+	else if(currentSelection == 5){	minButton = 5; maxButton = 5 }
+	else if(currentSelection == 6){	minButton = 6; maxButton = 6 }
+	else if(currentSelection == 7){	minButton = 6; maxButton = 7 }
+	else if(currentSelection == 8){	minButton = 6; maxButton = 8 } 
+	else if(currentSelection == 9){	minButton = 6; maxButton = 9 }
+	else if(currentSelection == 10){	minButton = 6; maxButton = 10 }
+		
+	for ( var i = 0; i < 5; i ++ ) {
+		
+		if(i >= minButton && i <= maxButton){
+			if(i < 5){
+				buttonGroup.children[i].className = 'button-red';
+			}else if(i > 5){
+				buttonGroup.children[i].className = 'button-green';
+			}else{
+				buttonGroup.children[i].className = 'button-blue';
+			}
+		}
+	}
+}
+
+function setNumberValue(scoreDiv, value){
+	
+	if(value < 5){
+		scoreDiv.innerHTML = "<div style='color:#ff4b4b'>" + String(value - 5) + "</div>";
+	}else if(value > 5){
+		scoreDiv.innerHTML = "<div style='color:#8bff7c'>" + "+" + String(value - 5) + "</div>";
+	}else{
+		scoreDiv.innerHTML = "<div style='color:#5dfdec'>" + String(value - 5) + "</div>";
+	}
+	
+}
+
+//set results of tokens depending on mouse position
+window.onmousemove = handleMouseMove;
+function handleMouseMove(event) {
+        event = event || window.event; 
+        mousePos = {
+            x: event.clientX,
+            y: event.clientY
+        };
+		if(mousePos.x > window.innerWidth/2){
+			filterno();
+		}else{
+			filteryes();
+		}
+    }
+	
+function filteryes(){
+	console.log("yes");
+	for ( var i = 0; i < yesArray.length; i ++ ) {
+		for ( var j = 0; j < yesArray[i].length; j ++ ) {
+			
+			var scoreTotal = yesArray[i][j].parentNode.getElementsByClassName('scoreTotal')[j];
+			var propertyName = yesArray[i][j].getElementsByClassName('propertyHolder')[0].innerHTML;
+			
+			for(var pn in incomingObj.questions[i].yes) {
+			   if(pn == propertyName){
+				   var propertyValue = incomingObj.questions[i].yes[propertyName];
+				   
+				   for ( var k = 0; k < 5; k ++ ) {
+					   yesArray[i][j].children[k].className = 'button-grey';
+					   noArray[i][j].children[k].className = 'button-grey';
+					   if(propertyValue < 0){
+							if(propertyValue < k - 4)yesArray[i][j].children[k].className = 'button-red';
+					   }else if(propertyValue > 0){
+							if(propertyValue > k)noArray[i][j].children[k].className = 'button-green';
+							
+					   }
+					}
+					
+					if(propertyValue < 0){
+						scoreTotalArray[i][j].innerHTML = "<div style='color:#ff4b4b'>" + String(propertyValue) + "</div>";
+					}else if(propertyValue > 0){
+						scoreTotalArray[i][j].innerHTML = "<div style='color:#8bff7c'>" + "+" + String(propertyValue) + "</div>";
+					}else{
+						scoreTotalArray[i][j].innerHTML = "<div style='color:#5dfdec'>" + String(propertyValue) + "</div>";
+					}
+				   
+			   }
+			}
+		}
+	}
+}
+
+function filterno(){
+	console.log("no");
+	for ( var i = 0; i < yesArray.length; i ++ ) {
+		for ( var j = 0; j < yesArray[i].length; j ++ ) {
+			
+			var scoreTotal = yesArray[i][j].parentNode.getElementsByClassName('scoreTotal')[j];
+			
+			var propertyName = yesArray[i][j].getElementsByClassName('propertyHolder')[0].innerHTML;
+			
+			for(var pn in incomingObj.questions[i].no) {
+			   if(pn == propertyName){
+				   var propertyValue = incomingObj.questions[i].no[propertyName];
+				   
+				   for ( var k = 0; k < 5; k ++ ) {
+					   yesArray[i][j].children[k].className = 'button-grey';
+					   noArray[i][j].children[k].className = 'button-grey';
+					   if(propertyValue < 0){
+							if(propertyValue < k - 4)yesArray[i][j].children[k].className = 'button-red';
+							
+					   }else if(propertyValue > 0){
+							if(propertyValue > k)noArray[i][j].children[k].className = 'button-green';
+							
+					   }
+					}
+					
+					if(propertyValue < 0){
+						scoreTotalArray[i][j].innerHTML = "<div style='color:#ff4b4b'>" + String(propertyValue) + "</div>";
+					}else if(propertyValue > 0){
+						scoreTotalArray[i][j].innerHTML = "<div style='color:#8bff7c'>" + "+" + String(propertyValue) + "</div>";
+					}else{
+						scoreTotalArray[i][j].innerHTML = "<div style='color:#5dfdec'>" + String(propertyValue) + "</div>";
+					}
+					
+				   
+			   }
+			}
+		}
+	}
+	
+	
+}
+
+	
+</script>
+</head>
+<body>
+
+<div id="myDiv"></div>
+<div id="admin"></div>
+
+</body>
+</html>
