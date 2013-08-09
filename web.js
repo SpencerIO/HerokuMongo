@@ -52,14 +52,15 @@ app.get('/get-all/', function(request, response) {
 	questionsCollection = new mongodb.Collection(myclient, "questions");
     questionDocuments = questionsCollection.find({});
 	
-      questionDocuments.toArray(function(error, docs) {
+    questionDocuments.toArray(function(error, docs) {
+		
         if(error) throw error;
  
         docs.forEach(function(doc){
 			questionsArray.push(doc)
         });
- 			response.send({questions:questionsArray, tokens:tokensArray, hi:String(request.body)});
-      });
+ 			response.send({questions:questionsArray, tokens:tokensArray});
+     });
 });
 
 app.post('/post-all/', function(request, response) {
@@ -69,14 +70,12 @@ app.post('/post-all/', function(request, response) {
 	var BSON = require('mongodb').BSONPure;
 	var o_id = new BSON.ObjectID(requestObj._id);
 	
-	
-
 	var q = new mongodb.Collection(myclient, "questions");
 	q.update({  _id: o_id },
 			{ $set: {question: requestObj.question, yes:requestObj.yes, no:requestObj.no}},
 			function (err,item){
 				if (err) throw err;    
-				response.send({q:JSON.parse(request.body.obj), yes:String(myclient), questioning:requestObj.question}
+				response.send({quest:requestObj.question}
 			);   
 	});
    
@@ -84,30 +83,30 @@ app.post('/post-all/', function(request, response) {
 
 function getalldata(){
 	
-	 questionsArray = [];
-	 tokensArray = [];
+	questionsArray = [];
+	tokensArray = [];
 	
 	questionsCollection = new mongodb.Collection(myclient, "questions");
     questionDocuments = questionsCollection.find({});
 	
-      questionDocuments.toArray(function(error, docs) {
-        if(error) throw error;
- 
-        docs.forEach(function(doc){
-			questionsArray.push(doc)
-        });
+        questionDocuments.toArray(function(error, docs) {
+			if(error) throw error;
+	 
+			docs.forEach(function(doc){
+				questionsArray.push(doc)
+			});
  
       });
 	  
 	tokensCollection = new mongodb.Collection(myclient, "tokens");
     tokenDocuments = tokensCollection.find({}, {limit:5});
 	
-      tokenDocuments.toArray(function(error, docs) {
-        if(error) throw error;
- 
-        docs.forEach(function(doc){
-			tokensArray.push(doc)
-        });
+    	tokenDocuments.toArray(function(error, docs) {
+			if(error) throw error;
+	 
+				docs.forEach(function(doc){
+				tokensArray.push(doc)
+			});
       });
 	
 }
