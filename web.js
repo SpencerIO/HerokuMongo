@@ -8,7 +8,7 @@ var express = require('express')
    , ObjectID = require('mongodb').ObjectID;
 
 var app = express();
-var index = fs.readFileSync('public/admin.html');
+var admin = fs.readFileSync('public/admin.html');
 
 var questionsArray = [];
 var tokensArray = [];
@@ -38,13 +38,11 @@ app.configure(function(){
 });
 
 app.get('/', function(request, response) {
-  response.end(index);
-  ////response.send(tempresponce);
+  
 });
 
 app.get('/admin/', function(request, response) {
-  response.end(index);
-  ////response.send(tempresponce);
+  response.end(admin);
 });
 
 app.get('/get-all/', function(request, response) {
@@ -62,9 +60,6 @@ app.get('/get-all/', function(request, response) {
         });
  			response.send({questions:questionsArray, tokens:tokensArray, hi:String(request.body)});
       });
-	//getalldata(response);
-	
-	//response.send(tempresponce);
 });
 
 app.post('/post-all/', function(request, response) {
