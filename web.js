@@ -1,13 +1,14 @@
 var express = require('express')
-	, http = require('http')
-	, path = require('path')
-	, mongo = require('mongo')
-	, fs = require('fs')
-	, mongoose = require('mongoose')
-	, mongodb = require('mongodb')
-	, ObjectID = require('mongodb').ObjectID;
+  , http = require('http')
+  , path = require('path')
+  , mongo = require('mongo')
+  , fs = require('fs')
+  , mongoose = require('mongoose')
+  , mongodb = require('mongodb')
+   , ObjectID = require('mongodb').ObjectID;
 
 var app = express();
+var main = fs.readFileSync('public/main.html');
 var admin = fs.readFileSync('public/admin.html');
 
 var questionsArray = [];
@@ -22,8 +23,8 @@ var myclient;
 
 mongodb.Db.connect(process.env.MONGOHQ_URL, {
     
-	auto_reconnect: true,
-	safe: true
+    auto_reconnect: true,
+    safe: true
 }, function(err, client) {  
 
 	myclient = client;
@@ -38,11 +39,13 @@ app.configure(function(){
 });
 
 app.get('/', function(request, response) {
-  
+  response.end(main);
+  ////response.send(tempresponce);
 });
 
 app.get('/admin/', function(request, response) {
-	response.end(admin);
+  response.end(admin);
+  ////response.send(tempresponce);
 });
 
 app.get('/get-all/', function(request, response) {
@@ -50,17 +53,19 @@ app.get('/get-all/', function(request, response) {
 	questionsArray = [];
 	
 	questionsCollection = new mongodb.Collection(myclient, "questions");
-	questionDocuments = questionsCollection.find({});
+    questionDocuments = questionsCollection.find({});
 	
-	questionDocuments.toArray(function(error, docs) {
-		
-		if(error) throw error;
+      questionDocuments.toArray(function(error, docs) {
+        if(error) throw error;
  
-		docs.forEach(function(doc){
+        docs.forEach(function(doc){
 			questionsArray.push(doc)
-		});
-		response.send({questions:questionsArray, tokens:tokensArray});
-	});
+        });
+ 			response.send({questions:questionsArray, tokens:tokensArray, hi:String(request.body)});
+      });
+	//getalldata(response);
+	
+	//response.send(tempresponce);
 });
 
 app.post('/post-all/', function(request, response) {
@@ -70,44 +75,47 @@ app.post('/post-all/', function(request, response) {
 	var BSON = require('mongodb').BSONPure;
 	var o_id = new BSON.ObjectID(requestObj._id);
 	
+	
+
 	var q = new mongodb.Collection(myclient, "questions");
 	q.update({  _id: o_id },
 			{ $set: {question: requestObj.question, yes:requestObj.yes, no:requestObj.no}},
 			function (err,item){
 				if (err) throw err;    
-				response.send({quest:requestObj.question}
-		);   
+				response.send({q:JSON.parse(request.body.obj), yes:String(myclient), questioning:requestObj.question}
+			);   
 	});
    
 });
 
 function getalldata(){
 	
-	questionsArray = [];
-	tokensArray = [];
+	 questionsArray = [];
+	 tokensArray = [];
 	
 	questionsCollection = new mongodb.Collection(myclient, "questions");
-	questionDocuments = questionsCollection.find({});
+    questionDocuments = questionsCollection.find({});
 	
-	questionDocuments.toArray(function(error, docs) {
-		if(error) throw error;
-	 
-		docs.forEach(function(doc){
-			questionsArray.push(doc)
-		});
+      questionDocuments.toArray(function(error, docs) {
+        if(error) throw error;
  
-	});
+        docs.forEach(function(doc){
+			questionsArray.push(doc)
+        });
+ 
+      });
 	  
 	tokensCollection = new mongodb.Collection(myclient, "tokens");
-	tokenDocuments = tokensCollection.find({}, {limit:5});
+    tokenDocuments = tokensCollection.find({}, {limit:5});
 	
-	tokenDocuments.toArray(function(error, docs) {
-		if(error) throw error;
-	 
-			docs.forEach(function(doc){
-				tokensArray.push(doc)
-			});
-	});
+      tokenDocuments.toArray(function(error, docs) {
+        if(error) throw error;
+ 
+        docs.forEach(function(doc){
+			tokensArray.push(doc)
+        });
+      });
+	
 }
 
 http.createServer(app).listen(process.env.PORT || 5000);

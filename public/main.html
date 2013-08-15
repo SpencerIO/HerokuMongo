@@ -277,12 +277,29 @@ function setNumberValue(scoreDiv, value){
 
 //set results of tokens depending on mouse position
 window.onmousemove = handleMouseMove;
+window.addEventListener( 'touchstart', touchstart, false );
 function handleMouseMove(event) {
         event = event || window.event; 
         mousePos = {
             x: event.clientX,
             y: event.clientY
         };
+
+		if(mousePos.x > window.innerWidth/2){
+			filterno();
+		}else{
+			filteryes();
+		}
+    }
+	
+function touchstart(event) {
+		console.log("touchstart");
+        event = event || window.event; 
+        mousePos = {
+            x: event.touches[ 0 ].pageX,
+            y: event.touches[ 0 ].pageY
+        };
+		
 		if(mousePos.x > window.innerWidth/2){
 			filterno();
 		}else{
